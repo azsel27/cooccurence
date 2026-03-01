@@ -5,7 +5,7 @@
     #create hashmap of word to word_index
 
 #process post dataset
-    #hashmap, key = user hash, value = post text
+    #list of tuples (user hash, post text)
     #for each post, create a list for each anchor word
     #count occurences of anchor words in a post in the list
     #create per post co-occurence matrix

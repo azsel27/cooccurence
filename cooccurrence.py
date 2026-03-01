@@ -36,11 +36,11 @@ def get_posts(post_fname):
         print(f"The file '{post_fname}' was not found.")
         sys.exit()
 
-    posts = {}
+    posts = []
     for row in parsed_data:
         user_hash = row[0]
         post_content = row[1]
-        posts[user_hash] = post_content
+        posts.append((user_hash, post_content))
     
     return posts
 
@@ -57,10 +57,9 @@ def main():
 
     #key user hash, value post text
     posts = get_posts(args.posts)
+    print(posts[2:5])
 
-    # print(f"Anchor: {args.anchor}")
-    # print(f"Posts: {args.posts}")
-    # print(f"Out: {args.out}")
+
 
 
 
