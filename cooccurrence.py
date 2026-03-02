@@ -2,6 +2,7 @@ import argparse
 import csv
 import sys
 import numpy as np
+import pickle
 
 
 class Post:
@@ -99,6 +100,13 @@ def group_post_matrices(post_matrices):
         user_matrices[user_hash] = user_matrix
     return user_matrices
 
+def serialize_user_matrices(data, fname):
+    if not fname:
+        fname = "matrix_out.pickle"
+    
+    with open(fname, 'wb') as f:
+        pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
+
 
 def main():
     parser = argparse.ArgumentParser(description='small script to create co-occurence matrices per user given proper datasets')
@@ -110,15 +118,18 @@ def main():
 
     #key anchor word, value index
     anchor_words = get_anchor_words(args.anchor)
+    print("Got anchor words")
     # reverse_anchor_words = [""] * len(anchor_words)
     # for anchor, anchor_idx in anchor_words.items():
     #     reverse_anchor_words[anchor_idx] = anchor
 
     #key user hash, value post text
     uncounted_posts = get_posts(args.posts)
+    print("Got post data")
 
     #returns list of Post objects
     counted_posts = count_posts(uncounted_posts, anchor_words)
+    print("Counted anchor words in posts")
     # print(counted_posts[10])
     # for i, count in enumerate(counted_posts[10].counts):
     #     if(count > 0):
@@ -126,6 +137,7 @@ def main():
 
     #each item in this list is (user hash, co-occurrence matrix for the post)
     post_matrices = counts_to_matrices(counted_posts)
+    print("Converted counts into per-post co-occurrence matrices")
     # print(post_matrices[0])
     # nonzero_indices = np.nonzero(post_matrices[0][1])
     # row_indices = nonzero_indices[0]
@@ -136,6 +148,8 @@ def main():
 
     #hashmap where key= user hash, value = post matrix
     user_matrices = group_post_matrices(post_matrices)
+    print("Determined per-user co-occurrence matrices")
+    # print(len(user_matrices.keys()))
     # key = "da0a4d57dd0fc1e5c5ab97dc0d0ef7b079c8fcbf64d40495e1a0c5e227119476"
     # test_matrix = user_matrices.get(key)
     # nonzero_indices = np.nonzero(test_matrix)
@@ -144,7 +158,8 @@ def main():
     # for r, c in zip(row_indices, col_indices):
     #     print(f"{reverse_anchor_words[r]}, {reverse_anchor_words[c]}")
 
-
+    serialize_user_matrices(user_matrices, args.out)
+    print("Serialized matrix")
 
 
 
