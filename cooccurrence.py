@@ -110,60 +110,126 @@ def serialize_user_matrices(data, fname):
     with open(fname, 'wb') as f:
         pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
 
+#takes a matrix and target sensitivity 
+#note that full matrix is scaled by 2*target since the matrix double counts each edge
+def scale_matrix(matrix, target):
+    #is this while loop necessary? Seems like rounding errors mean some matrices sum
+    # to very slightly higher with just one scaling, but the sums drop with a loop
+    
+    #this approach causes everything to be under 20, but with some being significantly lower
+    # while(matrix.sum() > 2*target): 
+    #     total_weight = matrix.sum()
+    #     if total_weight == 0:
+    #         #nothing to scale, avoid dividing by 0
+    #         return matrix
+    #     #the matrix double counts each value, so we scale by 2*target sensitivity
+    #     scaling_factor = (2*target) / total_weight
+    #     matrix = matrix * scaling_factor
+    # return matrix
+
+    #this approach
+    total_weight = matrix.sum()
+    if total_weight == 0:
+        #nothing to scale, avoid dividing by 0
+        return matrix
+    #the matrix double counts each value, so we scale by 2*target sensitivity
+    scaling_factor = (2*target) / total_weight
+    matrix = matrix * scaling_factor
+    return matrix
+
+
+
 
 def main():
     parser = argparse.ArgumentParser(description='small script to create co-occurence matrices per user given proper datasets')
     parser.add_argument('anchor', type=str, help='The file name the anchor words')
     parser.add_argument('posts', type=str, help="The file name of the posts")
     parser.add_argument('--out', type=str, help="The prefix of the output file")
+    parser.add_argument('--in_matrix', type=str, help="Filename of serialized user matrices, to avoid recalculation")
     
     args = parser.parse_args()
 
-    #key anchor word, value index
-    anchor_words = get_anchor_words(args.anchor)
-    print("Got anchor words")
-    # reverse_anchor_words = [""] * len(anchor_words)
-    # for anchor, anchor_idx in anchor_words.items():
-    #     reverse_anchor_words[anchor_idx] = anchor
+    if args.in_matrix:
+        anchor_words = get_anchor_words(args.anchor)
+        print("Got anchor words")
+        
+        with open(args.in_matrix, 'rb') as f:
+            user_matrices = pickle.load(f)
+        # print(len(user_matrices.keys()))
 
-    #key user hash, value post text
-    uncounted_posts = get_posts(args.posts)
-    print("Got post data")
+        # reverse_anchor_words = [""] * len(anchor_words)
+        # for anchor, anchor_idx in anchor_words.items():
+        #     reverse_anchor_words[anchor_idx] = anchor
 
-    #returns list of Post objects
-    counted_posts = count_posts(uncounted_posts, anchor_words)
-    print("Counted anchor words in posts")
-    # print(counted_posts[10])
-    # for i, count in enumerate(counted_posts[10].counts):
-    #     if(count > 0):
-    #         print(reverse_anchor_words[i])
+        # key = "da0a4d57dd0fc1e5c5ab97dc0d0ef7b079c8fcbf64d40495e1a0c5e227119476"
+        # test_matrix = user_matrices.get(key)
+        # nonzero_indices = np.nonzero(test_matrix)
+        # row_indices = nonzero_indices[0]
+        # col_indices = nonzero_indices[1]
+        # for r, c in zip(row_indices, col_indices):
+        #     print(f"{reverse_anchor_words[r]}, {reverse_anchor_words[c]}")
 
-    #each item in this list is (user hash, co-occurrence matrix for the post)
-    post_matrices = counts_to_matrices(counted_posts)
-    print("Converted counts into per-post co-occurrence matrices")
-    # print(post_matrices[0])
-    # nonzero_indices = np.nonzero(post_matrices[0][1])
-    # row_indices = nonzero_indices[0]
-    # col_indices = nonzero_indices[1]
-    # print(counted_posts[0].text)
-    # for r, c in zip(row_indices, col_indices):
-    #     print(f"{reverse_anchor_words[r]}, {reverse_anchor_words[c]}")
+    else:
 
-    #hashmap where key= user hash, value = post matrix
-    user_matrices = group_post_matrices(post_matrices)
-    print("Determined per-user co-occurrence matrices")
-    # print(len(user_matrices.keys()))
-    # key = "da0a4d57dd0fc1e5c5ab97dc0d0ef7b079c8fcbf64d40495e1a0c5e227119476"
-    # test_matrix = user_matrices.get(key)
-    # nonzero_indices = np.nonzero(test_matrix)
-    # row_indices = nonzero_indices[0]
-    # col_indices = nonzero_indices[1]
-    # for r, c in zip(row_indices, col_indices):
-    #     print(f"{reverse_anchor_words[r]}, {reverse_anchor_words[c]}")
+        #key anchor word, value index
+        anchor_words = get_anchor_words(args.anchor)
+        print("Got anchor words")
+        # reverse_anchor_words = [""] * len(anchor_words)
+        # for anchor, anchor_idx in anchor_words.items():
+        #     reverse_anchor_words[anchor_idx] = anchor
 
-    serialize_user_matrices(user_matrices, args.out)
-    print("Serialized matrix")
+        #key user hash, value post text
+        uncounted_posts = get_posts(args.posts)
+        print("Got post data")
 
+        #returns list of Post objects
+        counted_posts = count_posts(uncounted_posts, anchor_words)
+        print("Counted anchor words in posts")
+        # print(counted_posts[10])
+        # for i, count in enumerate(counted_posts[10].counts):
+        #     if(count > 0):
+        #         print(reverse_anchor_words[i])
+
+        #each item in this list is (user hash, co-occurrence matrix for the post)
+        post_matrices = counts_to_matrices(counted_posts)
+        print("Converted counts into per-post co-occurrence matrices")
+        # print(post_matrices[0])
+        # nonzero_indices = np.nonzero(post_matrices[0][1])
+        # row_indices = nonzero_indices[0]
+        # col_indices = nonzero_indices[1]
+        # print(counted_posts[0].text)
+        # for r, c in zip(row_indices, col_indices):
+        #     print(f"{reverse_anchor_words[r]}, {reverse_anchor_words[c]}")
+
+        #hashmap where key= user hash, value = post matrix
+        user_matrices = group_post_matrices(post_matrices)
+        print("Determined per-user co-occurrence matrices")
+        # print(len(user_matrices.keys()))
+        # key = "da0a4d57dd0fc1e5c5ab97dc0d0ef7b079c8fcbf64d40495e1a0c5e227119476"
+        # test_matrix = user_matrices.get(key)
+        # nonzero_indices = np.nonzero(test_matrix)
+        # row_indices = nonzero_indices[0]
+        # col_indices = nonzero_indices[1]
+        # for r, c in zip(row_indices, col_indices):
+        #     print(f"{reverse_anchor_words[r]}, {reverse_anchor_words[c]}")
+
+        if args.out:
+            serialize_user_matrices(user_matrices, args.out)
+            print("Serialized matrix")
+
+    #user matrices are either calculated or loaded in from file by this point
+
+    #scale matrices to sensitivity 10 (total sum 20)
+    for user, matrix in user_matrices.items():
+        new_matrix = scale_matrix(matrix, 10)
+        user_matrices[user] = new_matrix
+        # sum = new_matrix.sum()
+        # if sum > 20.0:
+        #     print(sum)
+    print("Scaled user matrices to sensitivity 10")
+    
+
+    
 
 
 

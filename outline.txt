@@ -19,7 +19,16 @@
     #add counts of post matrix to m
 
 #for each user
-    #write matrix to output file 
+    #scale matrix so all non-dupe values sum to 10 (full matrix sums to 20)
+        # calc total co-occurence weight of full matrix = w
+            # w = matrix.sum()
+        # matrix = matrix / w
+        # matrix = 20* matrix
+    # add Lap(10/epsilon) (for now, eps=5, so Lap(2)) to every cell
+
+# sum all matrices into aggregrate matrix
+
+# find top 20 edge/edge weights
 
 
 #Improvements/TODO
