@@ -110,6 +110,8 @@ def serialize_user_matrices(data, fname):
     with open(fname, 'wb') as f:
         pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
 
+
+#currently has slight inaccuracy at 10^-15 sometimes
 #takes a matrix and target sensitivity 
 #note that full matrix is scaled by 2*target since the matrix double counts each edge
 def scale_matrix(matrix, target):
@@ -137,7 +139,17 @@ def scale_matrix(matrix, target):
     matrix = matrix * scaling_factor
     return matrix
 
+def sum_user_matrices(matrices):
+    matrix_list = list(matrices.values())
+    matrix0 = matrix_list[0]
+    
+    complete_matrix = np.zeros(matrix0.shape)
+    for m in matrix_list:
+        complete_matrix += m
+    return complete_matrix
 
+def add_noise(matrix):
+    return 0
 
 
 def main():
@@ -227,6 +239,14 @@ def main():
         # if sum > 20.0:
         #     print(sum)
     print("Scaled user matrices to sensitivity 10")
+
+    complete_matrix = sum_user_matrices(user_matrices)
+    print("Combined user matrices")
+
+    # noisy_matrix = add_noise(complete_matrix)
+    # print("Added noise to combined matrix")
+    # print(noisy_matrix)
+
     
 
     

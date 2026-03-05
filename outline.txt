@@ -24,9 +24,10 @@
             # w = matrix.sum()
         # matrix = matrix / w
         # matrix = 20* matrix
-    # add Lap(10/epsilon) (for now, eps=5, so Lap(2)) to every cell
 
 # sum all matrices into aggregrate matrix
+
+# add Lap(10/epsilon) (for now, eps=5, so Lap(2)) to every cell
 
 # find top 20 edge/edge weights
 
