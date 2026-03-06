@@ -185,7 +185,12 @@ def get_top_k(matrix, k, anchor_words):
     
 
 def write_output(top_k, fname):
-    
+    with open(fname, 'w', newline='') as out:
+        writer = csv.writer(out)
+        headers = ['Word1', 'Word2', 'Edge weight']
+        writer.writerow(headers)
+        writer.writerows(top_k)
+
 
 
 
@@ -294,6 +299,8 @@ def main():
         fname = args.out
     else: 
         fname = "topk.csv"
+    write_output(top_edges, fname)
+    print("Wrote to file")
 
 
 
