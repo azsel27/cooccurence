@@ -148,6 +148,12 @@ def sum_user_matrices(matrices):
         complete_matrix += m
     return complete_matrix
 
+def get_reverse_anchor_words(anchor_words):
+    reverse_anchor_words = [""] * len(anchor_words)
+    for anchor, anchor_idx in anchor_words.items():
+        reverse_anchor_words[anchor_idx] = anchor
+    return reverse_anchor_words
+
 def add_noise(matrix, scale):
     #loc = 0, scale = scale, size = matrix.shape
     rng = np.random.default_rng()
@@ -155,14 +161,41 @@ def add_noise(matrix, scale):
     new_matrix = matrix + noise
     return new_matrix
 
+def get_top_k(matrix, k, anchor_words):
+    reverse_anchors = get_reverse_anchor_words(anchor_words)
+
+    #k= -1 to exclude the diagonal, 0 if noisy diagonal should be included
+    lt_rows, lt_cols = np.tril_indices_from(matrix, k=-1)
+
+    #values from the lower triangle of the matrix as a list
+    lt_matrix_values = matrix[lt_rows, lt_cols]
+
+    #unsorted list of top k indices
+    top_k_indices = np.argpartition(lt_matrix_values, -k)[-k:]
+    #sort and reverse top k indices
+    sorted_indices = np.argsort(lt_matrix_values[top_k_indices])[::-1]
+    top_k_indices = top_k_indices[sorted_indices]
+    
+    #tuples of matrix coordinates with the values 
+    index_values = [(lt_rows[i], lt_cols[i], lt_matrix_values[i]) for i in top_k_indices]
+    #tuples of anchor words with the weight of their edge
+    word_values = [(reverse_anchors[i[0]], reverse_anchors[i[1]], i[2]) for i in index_values]
+
+    return word_values
+    
+
+def write_output(top_k, fname):
+    
+
 
 
 def main():
     parser = argparse.ArgumentParser(description='small script to create co-occurence matrices per user given proper datasets')
     parser.add_argument('anchor', type=str, help='The file name the anchor words')
     parser.add_argument('posts', type=str, help="The file name of the posts")
-    parser.add_argument('--out', type=str, help="The prefix of the output file")
+    parser.add_argument('--out_matrix', type=str, help="The name of the output file of user matrices")
     parser.add_argument('--in_matrix', type=str, help="Filename of serialized user matrices, to avoid recalculation")
+    parser.add_argument('--out', type=str, help="The name of the output file of the top k edges and their values")
     
     args = parser.parse_args()
 
@@ -231,8 +264,8 @@ def main():
         # for r, c in zip(row_indices, col_indices):
         #     print(f"{reverse_anchor_words[r]}, {reverse_anchor_words[c]}")
 
-        if args.out:
-            serialize_user_matrices(user_matrices, args.out)
+        if args.out_matrix:
+            serialize_user_matrices(user_matrices, args.out_matrix)
             print("Serialized matrix")
 
     #user matrices are either calculated or loaded in from file by this point
@@ -253,6 +286,17 @@ def main():
     noisy_matrix = add_noise(complete_matrix,2)
     print("Added noise to combined matrix")
     # print(noisy_matrix)
+
+    top_edges = get_top_k(noisy_matrix, 20, anchor_words)
+    print("Got top 20 edges")
+
+    if args.out:
+        fname = args.out
+    else: 
+        fname = "topk.csv"
+
+
+
 
     
 
