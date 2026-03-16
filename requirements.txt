@@ -1,1 +1,5 @@
 numpy==2.4.2
+networkx
+leidenalg
+igraph
+python-igraph

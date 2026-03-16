@@ -3,6 +3,9 @@ import csv
 import sys
 import numpy as np
 import pickle
+import networkx as nx
+import igraph as ig
+import leidenalg as la
 
 
 class Post:
@@ -196,6 +199,30 @@ def write_output(top_k, fname):
         writer.writerows(top_k)
 
 
+def communities_from_noisy_matrix(m, resolution = 1.0):
+    #resolution must be > 0, does not function the same as in wag-core
+    #to match the get_top_k weights, we want to examine the lower half of the matrix (aka the upper half of the transposition)
+    g = ig.Graph.Weighted_Adjacency(m.T, mode="upper", attr="weight")
+    partition = la.find_partition(g, 
+                          la.CPMVertexPartition, #only one that handles negative weights naturally
+                          weights='weight',
+                          resolution_parameter=resolution)
+    print(f"Partition quality: {partition.quality()}")
+    communities = [list(comm) for comm in partition]
+    return communities
+
+def match_anchors_to_communities(anchors, comm):
+    rev_anchors = get_reverse_anchor_words(anchors)
+    return [[rev_anchors[i] for i in c] for c in comm]
+
+def write_out_partitions(comms, fname):
+    with open(fname, 'w', newline='') as out:
+        writer = csv.writer(out)
+        headers = ['Word', 'Partition index']
+        writer.writerow(headers)
+        for i, comm in enumerate(comms):
+            for word in comm:
+                writer.writerow((word, i))
 
 
 def main():
@@ -206,6 +233,7 @@ def main():
     parser.add_argument('--in_matrix', type=str, help="Filename of serialized user matrices, to avoid recalculation")
     parser.add_argument('--out', type=str, help="The name of the output file of the top k edges and their values")
     parser.add_argument('--ignore_indices', action="store_true", help="This flag will make the program ignore the indices in the anchor words file")
+    parser.add_argument('--out_partition', type=str, help="Filename to output communities list")
 
     args = parser.parse_args()
     #key anchor word, value index
@@ -266,6 +294,18 @@ def main():
         fname = "topk.csv"
     write_output(top_edges, fname)
     print("Wrote to file")
+
+    comm = communities_from_noisy_matrix(noisy_matrix, resolution=1.0)
+    print("Determined partitions")
+    comm_anchors = match_anchors_to_communities(anchor_words, comm)
+    print("Matched words to partitions")
+    if args.out_partition:
+        comm_fname = args.out_partition
+    else:
+        comm_fname = "partitions.csv"
+    write_out_partitions(comm_anchors, comm_fname)
+    print("Wrote partitions to file")
+
 
 
 
