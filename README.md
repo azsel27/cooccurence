@@ -20,4 +20,4 @@ python dp-wag.py anchor_words_reddit_privacy_week_20260223.txt reddit_privacy_we
 ```
 
 ## Examples
-### Examples directory contains sample outputs from the script on the reddit dataset with a threshold of 20.0, using adjacency co-occurrence.
+Examples directory contains sample outputs from the script on the reddit dataset with a threshold of 20.0, using adjacency co-occurrence.
